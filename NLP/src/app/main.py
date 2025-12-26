@@ -1,8 +1,12 @@
+import joblib
+import warnings
+from pathlib import Path
 import uvicorn
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from pydantic import BaseModel
+warnings.filterwarnings("ignore")
 
-import joblib
+from src.preprocessing.vectorizer import WordVectorizer
 
 
 
@@ -13,15 +17,13 @@ class Review(BaseModel):
     text: str
     sentiment: str
 
-all_reviews = []
 
-model_path = "saved_models/model_lightgbm.pkl"
-vectorizer_path = "saved_models/tfidf_vectorizer.pkl"
-
+BASE_DIR = Path.cwd()
+model_path =  BASE_DIR / "saved_models" / "model_lightgbm.pkl"
 classifier = joblib.load(model_path)
-vectorizer = joblib.load(vectorizer_path)
+vectorizer = WordVectorizer(method = "transformers")
 
-
+print(model_path)
 
 @app.get("/")
 def data_description():
@@ -31,37 +33,9 @@ def data_description():
 
 @app.post("/predict-sentiment", response_model=str)
 async def predict_sentiment(review: str):
-    embed = vectorizer.transform([review])
+    embed = vectorizer.get_embeddings(review)
     prediction = classifier.predict(embed)[0]
-    # item = Review(text = review, sentiment = prediction)
-    # all_reviews.append(item)
-    # {"Review" : item.text,
-    #         "Sentiment" : item.sentiment}
     return prediction
-
-
-
-# @app.post("/predict-sentiment", response_model=[str, File])
-# async def predict_sentiment(review: str|UploadFile):
-#     if type(review) == str:
-#         embed = vectorizer.transform([review])
-#         prediction = classifier.predict(embed)[0]
-#         all_reviews.append(Review(text = review, sentiment = prediction))
-#         # {"Review" : item.text,
-#         #         "Sentiment" : item.sentiment}
-#         return prediction
-#     elif type(review) == UploadFile:
-
-
-
-
-# @app.post("/predict-sentiment")
-# async def predict_sentiment(file: UploadFile = File(...)):
-#     content = await file.read()
-
-#     return ""   
-
-
 
 
 
