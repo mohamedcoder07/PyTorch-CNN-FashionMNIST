@@ -1,1 +1,1 @@
-# PyTorch-tutorial
+# PyTorch-CNN-FashionMNIST
